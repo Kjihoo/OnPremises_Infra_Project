@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: default
+data:
+  # 파트4(DBA)가 생성하는 MySQL Service 이름과 맞춰야 함
+  DB_HOST: "mysql-service"
+  DB_PORT: "3306"
+  DB_NAME: "traindb"

@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: default
+  labels:
+    app: backend
+spec:
+  replicas: 2                     # HPA가 이 값을 min~max 사이로 자동 조정
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate           # 롤링 업데이트: 구버전 파드를 하나씩 교체
+    rollingUpdate:
+      maxSurge: 1                 # 업데이트 중 최대 추가 파드 수
+      maxUnavailable: 0           # 업데이트 중 중단 파드 수 (0 = 무중단)
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: train-backend:1.0.0   # 빌드한 Docker 이미지 (버전 태그로 롤링 업데이트)
+          ports:
+            - containerPort: 8000
+
+          # ── 리소스 제한 (HPA가 CPU 사용률 계산에 반드시 필요) ──
+          resources:
+            requests:
+              cpu: "100m"         # 최소 0.1 코어 보장
+              memory: "128Mi"
+            limits:
+              cpu: "500m"         # 최대 0.5 코어
+              memory: "256Mi"
+
+          # ── 환경변수: ConfigMap + Secret 분리 ──────────────
+          envFrom:
+            - configMapRef:
+                name: backend-config   # DB_HOST, DB_PORT, DB_NAME
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+
+          # ── Liveness Probe: 파드가 죽었는지 감지 ───────────
+          # 실패 시 K8s가 파드를 자동으로 재시작
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # ── Readiness Probe: 트래픽 받을 준비가 됐는지 감지 ─
+          # 실패 시 Service에서 해당 파드를 제외 (트래픽 미전송)
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
