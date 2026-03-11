@@ -71,3 +71,11 @@ part3-database-storage/
 ## 시현 포인트
 1. **DB 영속성**: `INSERT` → `systemctl restart mysql` → `SELECT` → 데이터 유지 확인
 2. **Bastion 보안**: 외부에서 VM1~6 직접 SSH 불가 → Bastion 통해서만 가능
+
+
+## 작업 내용
+- VM6에 MySQL 설치 완료
+- traindb 생성 완료
+- trainuser 계정 및 권한 설정 완료
+- reservations 테이블 생성 및 테스트 데이터 삽입 완료
+- MySQL 재시작 후 데이터 유지 확인 완료
