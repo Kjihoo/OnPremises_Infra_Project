@@ -1,0 +1,331 @@
+좋습니다. 아래 설명은 사람들에게 아키텍처 발표할 때 그대로 설명할 수 있는 구조로 정리했습니다.
+(일부 구성은 환경에 따라 달라질 수 있어 추측입니다인 부분은 표시했습니다.)
+
+🎫 티켓팅 트래픽 대응 온프레미스 인프라 아키텍처 설명
+
+이 시스템은 티켓팅 순간에 발생하는 폭발적인 트래픽을 안정적으로 처리하기 위한 인프라 구조입니다.
+
+핵심 목표는 다음 4가지입니다.
+
+1️⃣ 네트워크 보안 (망 분리)
+2️⃣ 대규모 트래픽 처리 (Auto Scaling)
+3️⃣ 장애 발생 시 서비스 유지 (High Availability)
+4️⃣ 데이터 영구 보존 (Persistent Storage)
+
+구성에는 다음 기술들이 사용됩니다.
+
+네트워크 시뮬레이션: GNS3
+
+가상화 플랫폼: VMware ESXi 또는 VMware Workstation
+
+컨테이너 오케스트레이션: Kubernetes
+
+웹 서버 / Reverse Proxy: Nginx
+
+API 서버: FastAPI
+
+데이터베이스: MySQL
+
+1️⃣ 전체 트래픽 흐름 (가장 중요한 구조)
+
+외부 사용자가 티켓을 예매할 때 요청이 흐르는 전체 경로입니다.
+
+사용자
+   │
+HTTPS
+   │
+Nginx (Reverse Proxy / TLS)
+   │
+Kubernetes Ingress
+   │
+FastAPI 티켓 서버
+   │
+MySQL DB
+
+즉,
+
+인터넷 → 웹 서버 → API 서버 → 데이터베이스
+
+순서입니다.
+
+2️⃣ GNS3 코어 네트워크 (망 분리)
+
+여기서 **GNS3**는 실제 네트워크 장비를 가상으로 구성하는 역할을 합니다.
+
+이 프로젝트에서 GNS3의 핵심 역할은 네트워크 보안 분리입니다.
+
+네트워크는 3개 VLAN으로 분리됩니다.
+
+VLAN	역할
+VLAN10	DMZ (외부 서비스 영역)
+VLAN20	Private 서버 영역
+VLAN30	Database 영역
+
+구조
+
+Router
+ │
+Firewall / ACL
+ │
+ ├ VLAN10  (DMZ)
+ ├ VLAN20  (Private)
+ └ VLAN30  (DB)
+
+보안 정책 예:
+
+외부 → DMZ 443 허용
+DMZ → Private API 허용
+Private → DB 3306만 허용
+DB → 외부 차단
+
+즉
+
+DB는 인터넷에서 직접 접근 불가능합니다.
+
+3️⃣ Frontend & Edge Layer
+
+외부와 가장 먼저 만나는 서버입니다.
+
+서버 구성:
+
+Nginx VM
+
+역할:
+
+① HTTPS 처리
+
+TLS 인증서를 이용해
+
+HTTPS → HTTP 내부 전달
+
+을 수행합니다.
+
+② Reverse Proxy
+
+요청을 내부 API 서버로 전달합니다.
+
+/api → Kubernetes API 서버
+③ 정적 웹 서비스
+
+티켓팅 웹 페이지 제공
+
+예
+
+좌석 선택
+로그인
+예매
+4️⃣ Bastion (Jump Server)
+
+Bastion 서버는 관리자 접속용 서버입니다.
+
+목적
+
+외부 → 내부 서버 직접 접근 금지
+
+접속 방식
+
+관리자
+  │
+SSH
+  │
+Bastion
+  │
+내부 서버
+
+즉
+
+관리자는 Bastion을 통해서만 내부 접근 가능
+
+이 구조는 실제 기업에서도 많이 사용합니다.
+
+5️⃣ VMware 가상화 플랫폼
+
+여기서 VMware ESXi 또는
+**VMware Workstation**가 사용됩니다.
+
+역할:
+
+물리 서버
+   │
+VMware
+   │
+여러 VM 생성
+
+예
+
+VM1  Kubernetes Master
+VM2  Worker Node1
+VM3  Worker Node2
+VM4  Nginx
+VM5  Bastion
+
+즉
+
+한 서버에서 여러 서버 환경을 구현합니다.
+
+6️⃣ Kubernetes 클러스터
+
+이 프로젝트의 핵심 플랫폼입니다.
+
+플랫폼: Kubernetes
+
+구조
+
+Master Node
+  │
+  ├ Worker Node 1
+  └ Worker Node 2
+Master 역할
+
+클러스터 관리
+
+스케줄링
+
+상태 관리
+
+Worker 역할
+
+실제 서비스 실행
+
+Pod
+Container
+7️⃣ 티켓 API 서버
+
+API 서버는 **FastAPI**로 구현됩니다.
+
+예 API
+
+GET /trains
+GET /seats
+POST /reservation
+POST /payment
+
+티켓팅 순간에는
+
+수천 ~ 수만 요청
+
+이 동시에 발생합니다.
+
+그래서 Kubernetes의 Auto Scaling이 필요합니다.
+
+8️⃣ HPA 자동 확장
+
+HPA = Horizontal Pod Autoscaler
+
+예
+
+평상시
+API Pod 2개
+
+트래픽 증가
+
+API Pod 10개
+
+구조
+
+Worker Node
+ ├ API Pod
+ ├ API Pod
+ ├ API Pod
+ └ API Pod
+
+즉
+
+트래픽 증가 → 서버 자동 증가
+
+9️⃣ 장애 발생 시 자동 복구
+
+예 상황
+
+Worker Node1 다운
+
+그러면 Kubernetes는
+
+Pod를 Worker Node2로 이동
+
+합니다.
+
+이 기능을
+
+Self Healing
+
+이라고 합니다.
+
+🔟 Database 저장 구조
+
+DB는 **MySQL**을 사용합니다.
+
+저장 데이터
+
+기차 정보
+좌석 정보
+예약 정보
+결제 상태
+
+문제:
+
+Pod 삭제 → 데이터 사라짐
+
+그래서 사용하는 것이
+
+PVC (Persistent Volume Claim)
+
+구조
+
+MySQL Pod
+   │
+PVC
+   │
+Persistent Volume
+   │
+실제 디스크
+
+결과
+
+Pod 삭제 → 재생성
+데이터 유지
+1️⃣1️⃣ 티켓팅 트래픽 테스트
+
+부하 테스트 도구
+
+Apache JMeter
+
+테스트
+
+동시 사용자 5000명
+
+확인
+
+HPA 스케일아웃
+CPU 증가
+Pod 증가
+1️⃣2️⃣ 보안 핵심 구조
+
+이 프로젝트에서 가장 중요한 보안 구조입니다.
+
+① 네트워크 망분리
+DMZ
+Private
+DB
+② DB 직접 접근 차단
+외부 → DB ❌
+API → DB ✔
+③ Bastion 접근
+관리자 → Bastion → 내부 서버
+📊 이 아키텍처의 핵심 장점
+기능	효과
+망분리	해킹 시 내부 확산 방지
+Auto Scaling	티켓팅 트래픽 처리
+Self Healing	장애 자동 복구
+Persistent Storage	데이터 보존
+Bastion	관리자 보안
+🎯 이 프로젝트가 보여주는 기술 스택
+
+이 설계 하나로 다음 기술을 설명할 수 있습니다.
+
+Network Architecture
+Virtualization
+Container Orchestration
+High Availability
+Auto Scaling
+Security Architecture

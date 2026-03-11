@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>기차표 예약 시스템</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>🚄 기차표 예약 시스템</h1>
+    <p>온프레미스 인프라 프로젝트 데모</p>
+  </header>
+
+  <main>
+
+    <!-- 예약 폼 -->
+    <section class="card">
+      <h2>예약하기</h2>
+      <form id="reservationForm">
+        <div class="form-row">
+          <label>열차번호</label>
+          <input type="text" id="train_no" placeholder="예: KTX-101" required />
+        </div>
+        <div class="form-row">
+          <label>출발역</label>
+          <input type="text" id="departure" placeholder="예: 서울" required />
+        </div>
+        <div class="form-row">
+          <label>도착역</label>
+          <input type="text" id="destination" placeholder="예: 부산" required />
+        </div>
+        <div class="form-row">
+          <label>출발날짜</label>
+          <input type="date" id="date" required />
+        </div>
+        <div class="form-row">
+          <label>승객이름</label>
+          <input type="text" id="passenger" placeholder="예: 홍길동" required />
+        </div>
+        <div class="form-row">
+          <label>좌석번호</label>
+          <input type="text" id="seat_no" placeholder="예: 3A" required />
+        </div>
+        <button type="submit">예약하기</button>
+      </form>
+      <div id="formMessage" class="message"></div>
+    </section>
+
+    <!-- 예약 목록 -->
+    <section class="card">
+      <h2>예약 목록 <button id="refreshBtn" class="small-btn">새로고침</button></h2>
+      <table id="reservationTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>열차</th>
+            <th>출발</th>
+            <th>도착</th>
+            <th>날짜</th>
+            <th>승객</th>
+            <th>좌석</th>
+            <th>상태</th>
+            <th>취소</th>
+          </tr>
+        </thead>
+        <tbody id="reservationList"></tbody>
+      </table>
+    </section>
+
+    <!-- 헬스체크 -->
+    <section class="card health">
+      <h2>서버 상태</h2>
+      <div id="healthStatus">확인 중...</div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

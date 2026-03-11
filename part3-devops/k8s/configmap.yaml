@@ -4,7 +4,8 @@ metadata:
   name: backend-config
   namespace: default
 data:
-  # 파트4(DBA)가 생성하는 MySQL Service 이름과 맞춰야 함
-  DB_HOST: "mysql-service"
+  # MySQL은 VM6(독립 VM)에 설치됨
+  # 파트4 담당자가 VM6 IP 확정 후 아래 값 수정 필요
+  DB_HOST: "192.168.30.10"   # ← VM6 MySQL IP (VLAN30 대역, 확정 후 변경)
   DB_PORT: "3306"
   DB_NAME: "traindb"
