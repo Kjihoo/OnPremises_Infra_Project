@@ -4,12 +4,12 @@ metadata:
   name: backend-service
   namespace: default
 spec:
-  # ClusterIP: 클러스터 내부에서만 접근 가능
-  # 외부 트래픽은 파트1(Nginx)에서 이 서비스로 프록시
-  type: ClusterIP
+  # 클러스터 외부(VM4 Nginx)에서 접근할 수 있도록 NodePort로 변경
+  type: NodePort
   selector:
     app: backend         # Deployment의 파드 라벨과 일치
   ports:
     - protocol: TCP
-      port: 80           # 서비스 포트 (Nginx에서 이 포트로 요청)
-      targetPort: 8000   # 컨테이너 포트
+      port: 80           # 클러스터 내부 서비스 포트
+      targetPort: 8000   # 파드(FastAPI) 포트
+      nodePort: 30080    # 외부(Nginx)에서 접속할 포트 (ACL 허용 포트와 일치)

@@ -23,6 +23,7 @@ spec:
       containers:
         - name: backend
           image: mindollss/train-backend:1.0.0   # 빌드한 Docker 이미지 (버전 태그로 롤링 업데이트)
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
 
